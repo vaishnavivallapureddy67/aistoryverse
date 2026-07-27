@@ -19,11 +19,17 @@ class Settings(BaseSettings):
     def assemble_db_connection(cls, v: str) -> str:
         if not v:
             return "sqlite+aiosqlite:///./ai_storyverse.db"
+        
         # Convert Neon / Heroku / Render postgres:// or postgresql:// to asyncpg
         if v.startswith("postgres://"):
-            return v.replace("postgres://", "postgresql+asyncpg://", 1)
-        if v.startswith("postgresql://") and not v.startswith("postgresql+asyncpg://"):
-            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+            v = v.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif v.startswith("postgresql://") and not v.startswith("postgresql+asyncpg://"):
+            v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        
+        # asyncpg expects ssl=require instead of sslmode=require
+        if "sslmode=" in v:
+            v = v.replace("sslmode=", "ssl=")
+            
         return v
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
